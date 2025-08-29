@@ -14,7 +14,8 @@
 
 ## 📌 Descripción
 
-.
+Este laboratorio aborda conceptos de **programación concurrente** en Java, enfocándose en la sincronización de hilos, el manejo del problema **productor–consumidor**, y la prevención de **deadlocks** mediante mecanismos de coordinación y suspensión segura.
+
 
 ---
 
@@ -29,6 +30,12 @@ Al ejecutar el programa y analizarlo con **VisualVM**, se observa el comportamie
 - `Thread-0`: ejecuta `edu.eci.arst.concprg.prodcons.Producer.run()`
 - `Thread-1`: ejecuta `edu.eci.arst.concprg.prodcons.Consumer.run()`
 
+📷 _Evidencia (VisualVM)_
+
+<p align="center">
+  <img src="assets/img/img1.png" alt="Uso con un hilo" width="400"/>
+</p>
+
 ---
 
 ### 🔍 Análisis del Productor (`Thread-0`)
@@ -40,28 +47,25 @@ El hilo está en estado de espera, específicamente en la llamada:
 
 Esto indica que el productor se encuentra dormido, por lo tanto:
 - No realiza trabajo activo.
-- Su `Total Time (CPU)` es de **0 ms**, lo que confirma que **no esta utilizando el CPU**.
+- Su `Total Time (CPU)` es de **0 ms**, lo que confirma que **no esta consumiendo CPU**.
 
 
 ### 🔍 Análisis del Consumidor (`Thread-1`)
 
-El consumidor esta ejecutando el metodo:
+El consumidor está ejecutando el metodo:
   ```java
   edu.eci.arst.concprg.prodcons.Consumer.run()
   ```
 
-En este caso, se observa lo siguiente:
+Se observa lo siguiente:
 - `Total time`: 76,106 ms.
 - `Total time (CPU)`: 76,106 ms.
 
-Esto implica que el hilo ha estado activo **todo el tiempo muestreado**, y **ha utilizado la CPU continuamente.** 
+Esto implica que el hilo ha estado activo **todo el tiempo muestreado**, y que **ha utilizado la CPU continuamente.**
 
+### ✅ Conclusión
 
-
-
-## 1. 
-Al ejecutar el programa y utilizar visualvm para revisar el consumo de CPU, podemos ver que se estan utilizando dos hilos:
-Thread-0: ejecuta edu.eci.arst.concprg.prodcons.Producer.run()
-Thread-1: ejecuta edu.eci.arst.concprg.prodcons.Consumer.run()
-Ambos hilos tienen un tiempo total de CPU de 76,106 ms, lo que indica que han estado activos durante todo ese tiempo. Dentro de Thread-0, se puede observar que se esta llamando a java.lang.Thread.sleep(native), lo que indica que el productor esta esperando/durmiendo (no esta consumiendo CPU), ademas de que en total time (CPU) muestra 0 ms, por lo que confirmamos que no esta usando el CPU.
-Por otro lado Thread-1 esta ejecutando el metodo Consumer.run(), en donde total time (CPU) muestra 76,106 ms, al igual que en total time (es decir el 100% de tiempo de CPU), lo que quiere decir que se esta usando usando intensivamente el CPU
+- El alto consumo de CPU se debe al **`Consumer`**, que permanece en un bucle infinito verificando si la cola tiene elementos disponibles.
+- Esta forma de ejecución produce un comportamiento de **busy waiting**, en el cual el hilo se mantiene activo aunque no tenga trabajo que realizar.
+- La clase responsable del consumo de CPU es: **`edu.eci.arst.concprg.prodcons.Consumer`**.
+- El problema radica en la ausencia de mecanismos de sincronización (`wait()` y `notify()`), que permitirían que el consumidor quedara bloqueado hasta que existieran elementos que procesar.
