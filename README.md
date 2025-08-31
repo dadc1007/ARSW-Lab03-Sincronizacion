@@ -36,7 +36,6 @@ Al ejecutar el programa y analizarlo con **VisualVM**, se observa el comportamie
   <img src="assets/img/img1.png" alt="Uso con un hilo" width="400"/>
 </p>
 
-
 ### 🧵 Hilos en ejecución
 
 - `Thread-0`: ejecuta `edu.eci.arst.concprg.prodcons.Producer.run()`
@@ -48,8 +47,6 @@ Al ejecutar el programa y analizarlo con **VisualVM**, se observa el comportamie
   <img src="assets/img/img2.png" alt="Uso con un hilo" width="400"/>
 </p>
 
----
-
 ### 🔍 Análisis del Productor (`Thread-0`)
 
 El hilo está en estado de espera, específicamente en la llamada:
@@ -60,7 +57,6 @@ El hilo está en estado de espera, específicamente en la llamada:
 Esto indica que el productor se encuentra dormido, por lo tanto:
 - No realiza trabajo activo.
 - Su `Total Time (CPU)` es de **0 ms**, lo que confirma que **no esta consumiendo CPU**.
-
 
 ### 🔍 Análisis del Consumidor (`Thread-1`)
 
@@ -93,9 +89,6 @@ Con esta modificación, cuando el consumidor intenta obtener un elemento y la co
 
 Cuando el productor inserta un nuevo elemento en la cola, se llama a `notifyAll()`, lo que **despierta al consumidor** para que procese el dato.
 
-
----
-
 ### 📊 Consumo general de CPU
 
 - El consumo promedio de CPU se redujo drásticamente en comparación con el punto 1, pasando de ~13% a **~0,3%**.
@@ -108,8 +101,6 @@ Cuando el productor inserta un nuevo elemento en la cola, se llama a `notifyAll(
   <img src="assets/img/img3.png" alt="Consumo tras ajuste" width="400"/>
 </p>
 
----
-
 ### 🧵 Hilos en ejecución
 
 - `Thread-0`: ejecuta `edu.eci.arst.concprg.prodcons.Producer.run()`
@@ -120,8 +111,6 @@ Cuando el productor inserta un nuevo elemento en la cola, se llama a `notifyAll(
 <p align="center">
   <img src="assets/img/img4.png" alt="Sampler tras ajuste" width="400"/>
 </p>
-
----
 
 ### 🔍 Análisis del Productor (`Thread-0`)
 
@@ -141,8 +130,6 @@ Esto confirma que:
 - El consumidor ya **no ejecuta un bucle activo** revisando la cola.
 - Permanece en espera hasta recibir notificación del productor.
 - Su consumo de CPU es **cercano a 0%** mientras está bloqueado.
-
----
 
 ### ✅ Conclusión
 
