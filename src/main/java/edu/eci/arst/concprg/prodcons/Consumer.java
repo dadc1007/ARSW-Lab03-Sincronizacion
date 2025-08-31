@@ -5,30 +5,25 @@
  */
 package edu.eci.arst.concprg.prodcons;
 
-import java.util.Queue;
-
 /**
- *
  * @author hcadavid
  */
-public class Consumer extends Thread{
-    
-    private Queue<Integer> queue;
-    
-    
-    public Consumer(Queue<Integer> queue){
-        this.queue=queue;        
-    }
-    
-    @Override
-    public void run() {
-        while (true) {
+public class Consumer extends Thread {
+  private Queue queue;
 
-            if (queue.size() > 0) {
-                int elem=queue.poll();
-                System.out.println("Consumer consumes "+elem);                                
-            }
-            
-        }
+  public Consumer(Queue queue) {
+    this.queue = queue;
+  }
+
+  @Override
+  public void run() {
+    try {
+      while (true) {
+        int elem = queue.get();
+        System.out.println("Consumer consumes " + elem);
+      }
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
     }
+  }
 }
