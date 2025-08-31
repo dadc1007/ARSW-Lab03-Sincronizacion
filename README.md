@@ -138,7 +138,7 @@ Esto confirma que:
 - El consumo de CPU disminuyó de manera significativa (**~13% → ~0,3%**).
 - El sistema ahora logra un **uso mucho más eficiente de los recursos**.
 
-### 3. Ajuste con límite de stock en la cola
+## 3. Ajuste con límite de stock en la cola
 
 En este punto, se configuró la **cola (Queue)** con un **límite máximo de elementos**.  
 De hecho, nuestra cola puede verse como una **implementación manual de `LinkedBlockingQueue`**, ya que reproduce su comportamiento básico de bloqueo y sincronización entre productores y consumidores.
@@ -152,8 +152,7 @@ De esta manera:
 - El consumo promedio de CPU sigue siendo **muy bajo (≈0,3%)**.
 - Al igual que en el **punto 2**, los hilos entran en estado de espera (**WAITING**) cuando no pueden avanzar.
 - La diferencia principal respecto a **LinkedBlockingQueue** radica en el mecanismo de notificación.  
-  En nuestra implementación manual, la cola utiliza `notifyAll()`, lo que provoca que **todos los hilos bloqueados se despierten**, aunque finalmente **solo uno pueda continuar**.  
-  Esto genera **ligeros picos de CPU** por los cambios de contexto innecesarios.
+  En nuestra implementación manual, la cola utiliza `notifyAll()`, lo que provoca que **todos los hilos bloqueados se despierten**, aunque finalmente **solo uno pueda continuar**. Esto genera **ligeros picos de CPU** por los cambios de contexto innecesarios.
 - En contraste, **LinkedBlockingQueue** implementa esta misma lógica de forma más eficiente, ya que utiliza notificaciones más finas y despierta únicamente al **hilo necesario**.
 
 📷 _Evidencia (VisualVM)_
