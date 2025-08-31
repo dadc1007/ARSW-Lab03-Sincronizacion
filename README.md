@@ -163,8 +163,8 @@ De esta manera:
 
 
 ### 🧵 Hilos en ejecución
-- **Thread-0**: ejecuta `edu.eci.arst.concprg.prodcons.Producer.run()`
-- **Thread-1**: ejecuta `edu.eci.arst.concprg.prodcons.Consumer.run()`
+- `Thread-0`: ejecuta `edu.eci.arst.concprg.prodcons.Producer.run()`
+- `Thread-1`: ejecuta `edu.eci.arst.concprg.prodcons.Consumer.run()`
 
 📷 _Evidencia (VisualVM)_
 
@@ -187,3 +187,75 @@ De esta manera:
 - No se presentan errores ni alto consumo de CPU incluso con un stock pequeño.
 - La sincronización con **wait() y notifyAll()** cumple el objetivo, aunque el consumo es **ligeramente mayor** que con `LinkedBlockingQueue`.
 - Nuestra implementación puede entenderse como una versión **manual y didáctica** de `LinkedBlockingQueue`, mientras que esta última resulta más eficiente en entornos reales al usar **locks más finos** y **notificaciones precisas**.  
+
+---
+
+## 📂 Parte II – Búsqueda Concurrente de Listas Negras
+
+Implementamos una versión más eficiente del **buscador de listas** negras que:
+
+- Distribuya la búsqueda entre **varios hilos**.
+- Detenga **inmediatamente** la búsqueda cuando los hilos, en conjunto, detecten el número de ocurrencias requerido (`BLACK_LIST_ALARM_COUNT`) para determinar si un host es confiable o no.
+- Evite **condiciones de carrera** al actualizar contadores (`occurrences`) y banderas de ejecución (`running`).
+
+### 🧵 Hilos Distribuidos
+
+- Se crean **N hilos**, cada uno encargado de un segmento de servidores.
+- Cada hilo ejecuta `BlackListSearchThread.run()`, verificando lista por lista si la IP está en la lista negra.
+- Antes de cada iteración, cada hilo comprueba `controller.isRunning()` para decidir si continuar o detenerse.
+
+```java
+for (int i = startIndex; i < endIndex && controller.isRunning(); i++) {
+    checkedCount++;
+
+    if (skds.isInBlackListServer(i, ipadress)) {
+      controller.increment();
+      blackListOccurrences.add(i);
+    }
+}
+```
+
+### 🔑 Control de concurrencia (Controller)
+
+La clase `Controller` centraliza:
+
+- El contador de ocurrencias (`occurrences`) de forma síncrona, evitando condiciones de carrera.
+- La bandera `running`, que indica si los hilos deben continuar buscando.
+
+```java
+public synchronized void stop() {
+  running = false;
+}
+
+public synchronized void increment() {
+  occurrences++;
+  if (occurrences >= HostBlackListsValidator.BLACK_LIST_ALARM_COUNT) {
+    stop();
+  }
+}
+
+public synchronized boolean isRunning() {
+  return running;
+}
+```
+
+Esto asegura que **solo un hilo** pueda modificar el contador y la bandera a la vez.
+
+### 📥 Ejecución y recolección de resultados
+
+1. Cada hilo revisa su segmento de servidores mientras `controller.isRunning()` sea true.
+2. Si encuentra la IP en una lista negra, llama a `controller.increment()` y agrega el índice a blackListOccurrences.
+3. Los hilos se esperan entre sí usando `join()` antes de recolectar los resultados finales.
+4. Una vez todos los hilos terminan, se determina si el host es confiable o no según el número de coincidencias encontradas.
+
+### 📊 Comportamiento de la Búsqueda
+
+- Detención temprana: Los hilos se detienen apenas se alcanzan **5 coincidencias (BLACK_LIST_ALARM_COUNT)**.
+- Variación mínima en listas revisadas: Algunos hilos ya pueden estar procesando su lista cuando se alcanza el límite, por lo que el número total de listas revisadas puede variar ligeramente entre ejecuciones.  
+
+### ✅ Conclusiones
+
+- La versión concurrente distribuye eficientemente la búsqueda entre hilos, acelerando el proceso.
+- Se evita la exploración innecesaria de listas negras una vez alcanzado el límite de coincidencias.
+- La sincronización con **synchronized** garantiza consistencia y evita condiciones de carrera.
+- El resultado es un balance óptimo entre **rendimiento** y **correctitud** en entornos concurrentes.  
