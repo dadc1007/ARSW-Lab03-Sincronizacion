@@ -21,6 +21,7 @@ public class Consumer extends Thread {
       while (true) {
         int elem = queue.get();
         System.out.println("Consumer consumes " + elem);
+        Thread.sleep(1000);
       }
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();

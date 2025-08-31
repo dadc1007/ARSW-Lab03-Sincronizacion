@@ -11,9 +11,9 @@ import java.util.logging.Logger;
 public class StartProduction {
 
   public static void main(String[] args) {
-    Queue queue = new Queue();
+    Queue queue = new Queue(5);
 
-    new Producer(queue, Long.MAX_VALUE).start();
+    new Producer(queue).start();
 
     // let the producer create products for 5 seconds (stock).
     try {

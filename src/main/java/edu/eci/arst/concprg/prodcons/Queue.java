@@ -4,17 +4,27 @@ import java.util.LinkedList;
 
 public class Queue {
   private LinkedList<Integer> items = new LinkedList<>();
+  private int limit;
 
-  public synchronized void put(int value) {
+  public Queue(int limit) {
+    this.limit = limit;
+  }
+
+  public synchronized void put(int value) throws InterruptedException {
+    while (items.size() == limit) {
+      wait(); // el productor espera si la cola esta llena
+    }
     items.add(value);
-    notifyAll();
+    notifyAll(); // avisa al consumidor que hay un nuevo elemento por consumir
   }
 
   public synchronized int get() throws InterruptedException {
     while (items.isEmpty()) {
-      wait();
+      wait(); // el consumidor espera si la cola esta vacia
     }
 
-    return items.removeFirst();
+    int value = items.removeFirst();
+    notifyAll(); // avisa al productor que ya hay espacio disponible
+    return value;
   }
 }

@@ -137,3 +137,54 @@ Esto confirma que:
 - La sincronización con **wait() y notifyAll()** asegura que los hilos solo consuman CPU cuando realmente hay trabajo que realizar.
 - El consumo de CPU disminuyó de manera significativa (**~13% → ~0,3%**).
 - El sistema ahora logra un **uso mucho más eficiente de los recursos**.
+
+### 3. Ajuste con límite de stock en la cola
+
+En este punto, se configuró la **cola (Queue)** con un **límite máximo de elementos**.  
+De hecho, nuestra cola puede verse como una **implementación manual de `LinkedBlockingQueue`**, ya que reproduce su comportamiento básico de bloqueo y sincronización entre productores y consumidores.
+
+De esta manera:
+- El **productor** genera números muy rápido, pero si la cola llega al límite de stock, queda bloqueado en la instrucción `wait()` dentro de `put()`.
+- El **consumidor** procesa más lento (**1 segundo por elemento**).
+- Cada vez que el consumidor libera un espacio con `get()`, se ejecuta `notifyAll()`, despertando al productor para que pueda continuar.
+
+### 📊 Consumo general de CPU
+- El consumo promedio de CPU sigue siendo **muy bajo (≈0,3%)**.
+- Al igual que en el **punto 2**, los hilos entran en estado de espera (**WAITING**) cuando no pueden avanzar.
+- La diferencia principal respecto a **LinkedBlockingQueue** radica en el mecanismo de notificación.  
+  En nuestra implementación manual, la cola utiliza `notifyAll()`, lo que provoca que **todos los hilos bloqueados se despierten**, aunque finalmente **solo uno pueda continuar**.  
+  Esto genera **ligeros picos de CPU** por los cambios de contexto innecesarios.
+- En contraste, **LinkedBlockingQueue** implementa esta misma lógica de forma más eficiente, ya que utiliza notificaciones más finas y despierta únicamente al **hilo necesario**.
+
+📷 _Evidencia (VisualVM)_
+
+<p align="center">
+  <img src="assets/img/img5.png" alt="Consumo tras ajuste" width="400"/>
+</p>
+
+
+### 🧵 Hilos en ejecución
+- **Thread-0**: ejecuta `edu.eci.arst.concprg.prodcons.Producer.run()`
+- **Thread-1**: ejecuta `edu.eci.arst.concprg.prodcons.Consumer.run()`
+
+📷 _Evidencia (VisualVM)_
+
+<p align="center">  
+  <img src="assets/img/img6.png" alt="Sampler con límite de stock" width="400"/>  
+</p>
+
+### 🔍 Análisis del Productor (Thread-0)
+- Produce números de forma **muy rápida**.
+- Cuando la cola está llena (`items.size() == limit`), queda bloqueado en la llamada a `wait()` dentro de `put()`.
+- Solo se despierta cuando el consumidor libera espacio.
+
+### 🔍 Análisis del Consumidor (Thread-1)
+- Consume elementos a un ritmo **más lento** (`Thread.sleep(1000)`).
+- Mientras tanto, mantiene bloqueado al productor si la cola está llena.
+- El uso de CPU es **bajo** porque no ejecuta bucles activos, sino que espera de forma bloqueante.
+
+### ✅ Conclusión
+- El **límite de stock** garantiza que la cola no crezca indefinidamente.
+- No se presentan errores ni alto consumo de CPU incluso con un stock pequeño.
+- La sincronización con **wait() y notifyAll()** cumple el objetivo, aunque el consumo es **ligeramente mayor** que con `LinkedBlockingQueue`.
+- Nuestra implementación puede entenderse como una versión **manual y didáctica** de `LinkedBlockingQueue`, mientras que esta última resulta más eficiente en entornos reales al usar **locks más finos** y **notificaciones precisas**.  
