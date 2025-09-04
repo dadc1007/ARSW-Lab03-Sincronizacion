@@ -17,6 +17,8 @@ public class Immortal extends Thread {
 
     private final Random r = new Random(System.currentTimeMillis());
 
+    private volatile boolean paused = false;
+
 
     public Immortal(String name, List<Immortal> immortalsPopulation, int health, int defaultDamageValue, ImmortalUpdateReportCallback ucb) {
         super(name);
@@ -30,6 +32,19 @@ public class Immortal extends Thread {
     public void run() {
 
         while (true) {
+            synchronized(this) {
+                while(paused) {
+                    try{
+                        wait();
+                    }catch(InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            // No hay nadie más con quien pelear
+            if (immortalsPopulation.size() <= 1) {
+                break;
+            }
             Immortal im;
 
             int myIndex = immortalsPopulation.indexOf(this);
@@ -55,14 +70,37 @@ public class Immortal extends Thread {
 
     }
 
-    public void fight(Immortal i2) {
+    public void pauseThreads(){
+        paused=true;
+    }
 
-        if (i2.getHealth() > 0) {
-            i2.changeHealth(i2.getHealth() - defaultDamageValue);
-            this.health += defaultDamageValue;
-            updateCallback.processReport("Fight: " + this + " vs " + i2+"\n");
+
+    public synchronized void resumeThreads(){
+        paused=false;
+        notify();
+    }
+
+    public void fight(Immortal i2) {
+        Immortal first,second;
+        if (this.name.compareTo(i2.name) < 0) {
+            first = this;
+            second = i2;
         } else {
-            updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
+            first = i2;
+            second = this;
+        }
+
+        synchronized(first) {
+            synchronized(second) {
+                if (i2.getHealth() > 0) {
+                    i2.changeHealth(i2.getHealth() - defaultDamageValue);
+                    this.health += defaultDamageValue;
+                    updateCallback.processReport("Fight: " + this + " vs " + i2+"\n");
+                } else {
+                    updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
+                    immortalsPopulation.remove(i2);
+                }
+            }
         }
 
     }
